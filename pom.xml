@@ -41,8 +41,8 @@
   </scm>
 
   <properties>
-    <indoqa-boot-version>0.9.1-SNAPSHOT</indoqa-boot-version>
-    <indoqa-solr-zookeeper-bom-version>7.2.0.0-SNAPSHOT</indoqa-solr-zookeeper-bom-version>
+    <indoqa-boot-version>0.10.0</indoqa-boot-version>
+    <indoqa-solr-zookeeper-bom-version>7.2.1.0</indoqa-solr-zookeeper-bom-version>
   </properties>
 
   <dependencies>
