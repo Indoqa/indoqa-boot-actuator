@@ -1,4 +1,5 @@
-# v0.12.0 | TBA
+# v0.12.0 | 2019-02-13
+* unchanged - keep version number aligned with indoqa-boot
 
 # v0.11.0
 * not released
