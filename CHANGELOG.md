@@ -1,4 +1,5 @@
-# v0.14.0 | TBA
+# v0.14.0 | 2019-06-25
+* unchanged - keep version number aligned with indoqa-boot
 
 # v0.13.0 | 2019-03-27
 * unchanged - keep version number aligned with indoqa-boot
