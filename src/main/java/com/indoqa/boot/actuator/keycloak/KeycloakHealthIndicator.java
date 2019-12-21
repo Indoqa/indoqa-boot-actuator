@@ -16,31 +16,46 @@
  */
 package com.indoqa.boot.actuator.keycloak;
 
+import static javax.servlet.http.HttpServletResponse.*;
+import static org.slf4j.LoggerFactory.getLogger;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
+import java.util.Date;
 
 import com.indoqa.boot.actuate.health.AbstractHealthIndicator;
 import com.indoqa.boot.actuate.health.Health.Builder;
 import com.indoqa.boot.actuate.health.Status;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.slf4j.Logger;
 
 public class KeycloakHealthIndicator extends AbstractHealthIndicator {
+
+    private static final Logger LOGGER = getLogger(KeycloakHealthIndicator.class);
 
     private final String authServerUrl;
     private final String realm;
     private final String loginData;
+    private final Integer checkIntervalInSeconds;
+    private volatile LastCheck lastCheck;
 
+    @SuppressWarnings("unused")
     public KeycloakHealthIndicator(String authServerUrl, String realm, String loginData) {
+        this(authServerUrl, realm, loginData, null);
+    }
+
+    public KeycloakHealthIndicator(String authServerUrl, String realm, String loginData, Integer checkIntervalInSeconds) {
         super();
         this.authServerUrl = StringUtils.appendIfMissing(authServerUrl, "/");
         this.realm = realm;
         this.loginData = loginData;
+        this.checkIntervalInSeconds = checkIntervalInSeconds;
     }
 
     private static void consumeResponse(HttpURLConnection connection) {
@@ -64,33 +79,72 @@ public class KeycloakHealthIndicator extends AbstractHealthIndicator {
         }
     }
 
-    @Override
-    protected void doHealthCheck(Builder builder) throws Exception {
+    private int performKeycloakLogin() throws Exception {
+        if (this.lastCheck != null && this.lastCheck.isValid()) {
+            int previousResponseCode = this.lastCheck.getResponseCode();
+            LOGGER.debug("Use cached Keycloak health check result: responseCode={}", previousResponseCode);
+            return previousResponseCode;
+        }
+
         byte[] data = this.loginData.getBytes(StandardCharsets.UTF_8);
         URL url = new URL(this.authServerUrl + "realms/" + this.realm + "/protocol/openid-connect/token");
 
+        LOGGER.debug("Perform Keycloak health check: url={}, data={}", url.toURI().toASCIIString(), this.loginData);
+
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
-        connection.setDoOutput(true);
-        connection.setUseCaches(false);
-        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        connection.setRequestProperty("Charset", "UTF-8");
-        connection.setRequestProperty("Content-Length", Integer.toString(data.length));
+        try {
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setUseCaches(false);
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            connection.setRequestProperty("Charset", "UTF-8");
+            connection.setRequestProperty("Content-Length", Integer.toString(data.length));
 
-        try (OutputStream outputStream = connection.getOutputStream()) {
-            outputStream.write(data);
+            try (OutputStream outputStream = connection.getOutputStream()) {
+                outputStream.write(data);
+            }
+
+            int responseCode = connection.getResponseCode();
+            this.lastCheck = new LastCheck(responseCode);
+            return responseCode;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+                consumeResponse(connection);
+            }
         }
+    }
 
-        int responseCode = connection.getResponseCode();
-        if (responseCode == 200) {
+    @Override
+    protected void doHealthCheck(Builder builder) throws Exception {
+        int responseCode = this.performKeycloakLogin();
+        if (responseCode == SC_OK) {
             builder.status(Status.UP);
-        } else if (responseCode >= 500) {
+        }
+        else if (responseCode >= SC_INTERNAL_SERVER_ERROR) {
             builder.status(Status.DOWN);
-        } else {
+        }
+        else {
             builder.status("INVALID_CONFIGURATION").withDetail("status-code", responseCode);
         }
+    }
 
-        consumeResponse(connection);
-        connection.disconnect();
+    private class LastCheck {
+
+        private final Date validUntil;
+        private final int responseCode;
+
+        LastCheck(int responseCode) {
+            this.responseCode = responseCode;
+            this.validUntil = DateUtils.addSeconds(new Date(), KeycloakHealthIndicator.this.checkIntervalInSeconds);
+        }
+
+        boolean isValid() {
+            return this.validUntil.after(new Date());
+        }
+
+        int getResponseCode() {
+            return this.responseCode;
+        }
     }
 }
