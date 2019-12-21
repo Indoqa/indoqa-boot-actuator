@@ -1,3 +1,6 @@
+# v0.15.0 | TBA
+* Support throttling of the keycloak health check
+
 # v0.14.0 | 2019-06-25
 * unchanged - keep version number aligned with indoqa-boot
 
