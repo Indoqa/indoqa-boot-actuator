@@ -42,15 +42,15 @@ public class KeycloakHealthIndicator extends AbstractHealthIndicator {
     private final String authServerUrl;
     private final String realm;
     private final String loginData;
-    private final Integer checkIntervalInSeconds;
+    private final int checkIntervalInSeconds;
     private volatile LastCheck lastCheck;
 
     @SuppressWarnings("unused")
     public KeycloakHealthIndicator(String authServerUrl, String realm, String loginData) {
-        this(authServerUrl, realm, loginData, null);
+        this(authServerUrl, realm, loginData, 0);
     }
 
-    public KeycloakHealthIndicator(String authServerUrl, String realm, String loginData, Integer checkIntervalInSeconds) {
+    public KeycloakHealthIndicator(String authServerUrl, String realm, String loginData, int checkIntervalInSeconds) {
         super();
         this.authServerUrl = StringUtils.appendIfMissing(authServerUrl, "/");
         this.realm = realm;

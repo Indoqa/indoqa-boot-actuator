@@ -35,7 +35,7 @@ public class KeycloakHealthActuator implements ActuatorActivator {
     private String loginData;
 
     @Value("com.indoqa.boot.actuator.keycloak.check-interval-in-seconds")
-    private Integer checkIntervalInSeconds;
+    private int checkIntervalInSeconds;
 
     @Bean
     public HealthIndicator getSolrHealthIndicator() {
