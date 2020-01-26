@@ -40,7 +40,7 @@
   </scm>
 
   <properties>
-    <indoqa-boot-version>0.14.0</indoqa-boot-version>
+    <indoqa-boot-version>0.15.0</indoqa-boot-version>
     <indoqa-solr-zookeeper-bom-version>7.2.1.0</indoqa-solr-zookeeper-bom-version>
   </properties>
 
