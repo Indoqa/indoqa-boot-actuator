@@ -1,4 +1,4 @@
-# v0.15.0 | TBA
+# v0.15.0 | 2020-01-26
 * Support throttling of the keycloak health check
 
 # v0.14.0 | 2019-06-25
