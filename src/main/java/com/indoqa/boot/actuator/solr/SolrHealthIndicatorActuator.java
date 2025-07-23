@@ -17,7 +17,7 @@
 package com.indoqa.boot.actuator.solr;
 
 import java.util.Map;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.indoqa.boot.actuate.activators.ActuatorActivator;
 import com.indoqa.boot.actuate.health.HealthIndicator;

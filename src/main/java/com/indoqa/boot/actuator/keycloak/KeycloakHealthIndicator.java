@@ -16,7 +16,7 @@
  */
 package com.indoqa.boot.actuator.keycloak;
 
-import static javax.servlet.http.HttpServletResponse.*;
+import static jakarta.servlet.http.HttpServletResponse.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
@@ -30,6 +30,7 @@ import java.util.Date;
 import com.indoqa.boot.actuate.health.AbstractHealthIndicator;
 import com.indoqa.boot.actuate.health.Health.Builder;
 import com.indoqa.boot.actuate.health.Status;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -79,6 +80,18 @@ public class KeycloakHealthIndicator extends AbstractHealthIndicator {
         }
     }
 
+    @Override
+    protected void doHealthCheck(Builder builder) throws Exception {
+        int responseCode = this.performKeycloakLogin();
+        if (responseCode == SC_OK) {
+            builder.status(Status.UP);
+        } else if (responseCode >= SC_INTERNAL_SERVER_ERROR) {
+            builder.status(Status.DOWN);
+        } else {
+            builder.status("INVALID_CONFIGURATION").withDetail("status-code", responseCode);
+        }
+    }
+
     private int performKeycloakLogin() throws Exception {
         if (this.lastCheck != null && this.lastCheck.isValid()) {
             int previousResponseCode = this.lastCheck.getResponseCode();
@@ -115,20 +128,6 @@ public class KeycloakHealthIndicator extends AbstractHealthIndicator {
         }
     }
 
-    @Override
-    protected void doHealthCheck(Builder builder) throws Exception {
-        int responseCode = this.performKeycloakLogin();
-        if (responseCode == SC_OK) {
-            builder.status(Status.UP);
-        }
-        else if (responseCode >= SC_INTERNAL_SERVER_ERROR) {
-            builder.status(Status.DOWN);
-        }
-        else {
-            builder.status("INVALID_CONFIGURATION").withDetail("status-code", responseCode);
-        }
-    }
-
     private class LastCheck {
 
         private final Date validUntil;
@@ -139,12 +138,12 @@ public class KeycloakHealthIndicator extends AbstractHealthIndicator {
             this.validUntil = DateUtils.addSeconds(new Date(), KeycloakHealthIndicator.this.checkIntervalInSeconds);
         }
 
-        boolean isValid() {
-            return this.validUntil.after(new Date());
-        }
-
         int getResponseCode() {
             return this.responseCode;
+        }
+
+        boolean isValid() {
+            return this.validUntil.after(new Date());
         }
     }
 }
